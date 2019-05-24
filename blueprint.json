@@ -2,8 +2,8 @@
   "schema": {
     "type": "service_blueprint",
     "version": {
-      "major": 1,
-      "minor": 0
+      "major": 0,
+      "minor": 1
     },
     "origin": "Engines Developer Studio 0.2"
   },
@@ -22,25 +22,25 @@
         "label": "dns"
       }
     },
-    "timestamp": "2017-11-22T10:57:22+11:00"
+    "timestamp": "2019-05-24T21:55:30+10:00"
   },
   "software": {
     "base": {
       "name": "dns",
-      "accepts": [
-        "ManagedEngine",
-        "ManagedService"
-      ],
       "publisher_namespace": "EnginesSystem",
       "type_path": "dns",
       "service_handle_field": "hostname",
       "parent_image": "engines/servicebase",
-      "run_as_user": "bind",
       "deployment_type": "worker",
+      "default_stop_timeout": 0,
+      "restart_attempts": 0,
       "memory": {
         "required": 96,
         "recommended": 96
       },
+      "run_as_user": "bind"
+    },
+    "disposition": {
       "immutable": true,
       "attach_post_build": true
     },
@@ -66,6 +66,12 @@
         "package": "bind9"
       }
     ],
+    "consumers": {
+      "accepts": [
+        "ManagedEngine",
+        "ManagedService"
+      ]
+    },
     "consumer_params": [
       {
         "name": "hostname",
@@ -123,7 +129,7 @@
     ],
     "configurators": [
       {
-        "name": "dns_forwarders ",
+        "name": "dns_forwarders",
         "label": "DNS forwarders",
         "variables": [
           {
