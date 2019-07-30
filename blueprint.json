@@ -22,7 +22,7 @@
         "label": "dns"
       }
     },
-    "timestamp": "2019-05-24T21:55:30+10:00"
+    "timestamp": "2019-07-30T15:41:02+10:00"
   },
   "software": {
     "base": {
@@ -109,7 +109,16 @@
       {
         "name": "list_records",
         "label": "List Records",
-        "return_type": "json"
+        "return_type": "plain_text",
+        "variables": [
+          {
+            "name": "domain_name",
+            "mandatory": true,
+            "input": {
+              "type": "string"
+            }
+          }
+        ]
       },
       {
         "name": "list_domains",
@@ -143,7 +152,7 @@
             }
           },
           {
-            "name": "dns_server",
+            "name": "dns_server2",
             "input": {
               "type": "string",
               "label": "2nd DNS server",
