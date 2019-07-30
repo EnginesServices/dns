@@ -22,7 +22,7 @@
         "label": "dns"
       }
     },
-    "timestamp": "2019-07-30T15:41:02+10:00"
+    "timestamp": "2019-07-30T15:59:55+10:00"
   },
   "software": {
     "base": {
@@ -113,7 +113,6 @@
         "variables": [
           {
             "name": "domain_name",
-            "mandatory": true,
             "input": {
               "type": "string"
             }
