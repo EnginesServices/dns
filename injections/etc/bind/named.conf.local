@@ -1,0 +1,8 @@
+acl "trusted" {
+     192.168.0.0/16;
+     localhost;
+     172.16.0.0/12;
+     10.0.0.0/8;
+ };
+
+include "/home/bind/engines/named.conf.engines";
