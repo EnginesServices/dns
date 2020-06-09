@@ -22,7 +22,7 @@
         "label": "dns"
       }
     },
-    "timestamp": "2019-07-30T15:59:55+10:00"
+    "timestamp": "2020-06-09T13:13:10+10:00"
   },
   "software": {
     "base": {
@@ -38,7 +38,10 @@
         "required": 96,
         "recommended": 96
       },
-      "run_as_user": "bind"
+      "run_as_user": "bind",
+      "user_id": "22009",
+      "user_primary_group": "bind",
+      "create_user": "1"
     },
     "disposition": {
       "immutable": true,
@@ -54,11 +57,11 @@
     "scripts": {
       "start": {
         "language": "sh",
-        "content": "#!/bin/bash\r\n\r\n\r\ngrep BLANK /var/lib/bind/engines/engines.dnsrecords >/dev/null\r\n\r\nif test $? -eq 0\r\n then\r\n   ip_r=`grep dns /etc/hosts|awk '{print $1}' |cut -d. -f-3`\r\n   ip=${ip_r}.1\r\n   net=`echo $ip_r |awk  ' BEGIN {  FS=\".\"} {print $2 \".\" $1}'`\r\n   cat  /home/engines/templates/dns/engines.internal.domain.tmpl |sed \"/IP/s//$ip/\" > /var/lib/bind/engines/engines.dnsrecords\r\n   cat  /home/engines/templates/dns/engines.internal.in-addr.arpa.tmpl |sed \"/NET/s//$net/g\" > /var/lib/bind/engines/engines.in-addr.arpa.dnsrecords\r\nfi\r\n\r\n\r\nKILL_SCRIPT=/home/engines/scripts/signal/kill_bind.sh\r\nexport KILL_SCRIPT\r\n\r\n\r\nPID_FILE=/var/run/named/named.pid\r\nexport PID_FILE\r\n. /home/engines/functions/trap.sh\r\n\r\nsudo -n /home/engines/scripts/engine/_setup.sh\r\n\r\nsudo -n /usr/sbin/named  -c /etc/bind/named.conf -f -u bind &\r\n\r\n. /home/engines/scripts/services/dns_functions.sh\r\nhostname=lanhost\r\nip=`cat  /home/engines/system/net/net/ip`\r\nadd_to_internal_domain\r\n\r\nip=`cat  /home/engines/system/net/public`\r\nhostname=publichost\r\nno_inarpra=1\r\nadd_to_internal_domain\r\n\r\nstartup_complete\r\n\r\nwait  \r\nexit_code=$?\r\n\r\nshutdown_complete"
+        "content": "#!/bin/sh\r\n\r\ngrep BLANK /var/lib/bind/engines/engines.dnsrecords >/dev/null\r\n\r\nif test $? -eq 0\r\n then\r\n   ip_r=`grep dns /etc/hosts|awk '{print $1}' |cut -d. -f-3`\r\n   ip=${ip_r}.1\r\n   net=`echo $ip_r |awk  ' BEGIN {  FS=\".\"} {print $2 \".\" $1}'`\r\n   cat  /home/engines/templates/dns/engines.internal.domain.tmpl |sed \"/IP/s//$ip/\" > /var/lib/bind/engines/engines.dnsrecords\r\n   cat  /home/engines/templates/dns/engines.internal.in-addr.arpa.tmpl |sed \"/NET/s//$net/g\" > /var/lib/bind/engines/engines.in-addr.arpa.dnsrecords\r\nfi\r\n\r\n\r\nKILL_SCRIPT=/home/engines/scripts/signal/kill_bind.sh\r\nexport KILL_SCRIPT\r\n\r\n\r\nPID_FILE=/home/engines/run/named.pid\r\nexport PID_FILE\r\n. /home/engines/functions/trap.sh\r\n\r\nsudo -n /home/engines/scripts/engine/sudo/_setup.sh\r\n\r\nsudo -n /usr/sbin/named  -c /etc/bind/named.conf -f -u bind &\r\n\r\nstartup_complete\r\n\r\nsleep 10\r\n/home/engines/scripts/engine/create_int_ip_dns_records.sh\r\n/home/engines/scripts/engine/create_ext_ip_dns_records.sh\r\nwait  \r\n\r\nexit_code=$?\r\n\r\nshutdown_complete\r\n\r\n"
       },
       "install": {
         "language": "sh",
-        "content": "#!/bin/bash\r\n\r\n    chown bind /var/run/named &&\\\r\n\tchown bind /var/lib/bind/engines /home/bind/ &&\\\r\n\tusermod -G containers -a bind &&\\\r\n\ttouch /home/bind/engines/forwarders &&\\\r\n\tchown bind /home/engines/scripts/configurators/saved /home/bind/engines/forwarders &&\\\r\n\tmkdir -p /etc/bind/keys/ /home/bind/engines/domains /home/bind/engines/zones/ &&\\\r\n\tchown bind -R /etc/bind/keys/ /etc/bind/named.conf.default-zones  /var/lib/bind/engines/engines.dnsrecords /home/bind/engines/domains.hosted /home/bind/engines/zones/ /home/bind/engines/domains// &&\\\r\n\tchmod -R go-rw /etc/sudoers /etc/sudoers.d/"
+        "content": "  #!/bin/sh\r\n  \r\n   mkdir -p /var/lib/bind/engines \r\n    mkdir -p /var/run/named \r\n    chown bind -R  /home/bind/ \r\n   chown bind /var/run/named \r\n\tchown bind /var/lib/bind/engines /home/bind/ \r\n\tusermod -G containers -a bind \r\n\ttouch /home/bind/engines/forwarders \r\n\tchown bind /home/engines/scripts/configurators/saved /home/bind/engines/forwarders\r\n\tmkdir -p /etc/bind/keys/ /home/bind/engines/domains /home/bind/engines/zones/ \r\n\tchown bind -R /etc/bind/keys/ /etc/bind/named.conf.default-zones  /var/lib/bind/engines/engines.dnsrecords /home/bind/engines/domains.hosted /home/bind/engines/zones/ /home/bind/engines/domains// \r\n\r\n\r\n mkdir -p /home/bind/domain_list/lan /home/bind/domain_list/wan\r\n chown bind /home/bind/domain_list/lan /home/bind/domain_list/wan"
       }
     },
     "system_packages": [
@@ -66,11 +69,25 @@
         "package": "bind9"
       }
     ],
+    "included_files": [
+      {
+        "source": "injections/",
+        "destination": "/"
+      }
+    ],
     "consumers": {
       "accepts": [
         "ManagedEngine",
         "ManagedService"
       ]
+    },
+    "consumer_scripts": {
+      "add": {
+        "content": "#!/bin/sh\r\n . /home/engines/functions/checks.sh\r\n\r\n. /home/engines/scripts/engine/dns_functions.sh\r\n\r\n#. /home/engines/functions/params_to_env.sh\r\n#params_to_env\r\n\r\n\r\n  if test \"$type_path\" = \"domains\"\r\n   then        \r\n     if test $wan_or_lan = lan\r\n        then\r\n          ip=`cat /home/engines/system/net/ip`\r\n      elif test  $wan_or_lan = wan\r\n         then\r\n           ip=`cat /home/engines/system/net/public`\r\n      fi\r\n    touch /home/bind/domain_list/${wan_or_lan}/${domain_name}   \r\n    cat /home/engines/templates/dns/config_file_zone_entry.tmpl | sed \" /DOMAIN/s//${domain_name}/g\" > /home/bind/engines/domains/${domain_name}\r\n    cat /home/engines/templates/dns/selfhosted.tmpl | sed \"/DOMAIN/s//${domain_name}/g\"\\\r\n         | sed \"/IP/s//${ip}/g\" > /home/bind/engines/zones/named.conf.${domain_name}\r\n    cat /home/bind/engines/domains/* > /home/bind/engines/domains.hosted\r\n    kill -HUP `cat /home/engines/run/named.pid`\r\n    echo Success\r\n    exit 0\r\n  fi\r\nif test \"$ip\" = false\r\n then\r\n  echo \"No IP\"\r\n  exit 1\r\nfi   \r\n\r\ndomain_name=engines.internal\r\nadd_to_internal_domain\r\n\r\necho Success\r\nexit $r\r\n\r\n"
+      },
+      "remove": {
+        "content": "#!/bin/sh\r\n . /home/engines/functions/checks.sh\r\n\r\n\r\n  if test $type_path = \"domains\"\r\n    then\t\r\n     if ! test ${domain_name} = engines.internal\r\n      then\r\n  \t   rm /home/bind/engines/domains/${domain_name}\r\n  \t   rm  /home/bind/domain_list/*/${domain_name}\r\n  \t   rm /home/bind/engines/zones/named.conf.${domain_name}\r\n  \t   cat /home/bind/engines/domains/* > /home/bind/engines/domains.hosted\r\n  \t   kill -HUP `cat /home/engines/run/named.pid`\r\n       echo Success\r\n  \t   exit\r\n  \tfi\r\n  fi\r\n\r\n\r\nif test -z ${hostname}\r\n then\r\n  echo Error:Missing hostname ${hostname}\r\n  exit -1\r\nfi\r\n\r\n    \r\n#FIXME make engines.internal settable\r\ndns_cmd_file=`mktemp`\r\nfqdn_str=${hostname}.engines.internal\r\necho server 127.0.0.1 > $dns_cmd_file\r\necho update delete $fqdn_str >> $dns_cmd_file\r\necho send >> $dns_cmd_file\r\n\t\r\nnsupdate -k /etc/bind/keys/ddns.private $dns_cmd_file\r\nr=$?\r\ncp  $dns_cmd_file /tmp/rm_$fqdn_str\r\n\t\r\nif test $r -eq 0\r\n then\r\n  echo Success\r\n else\r\n  file=`cat $dns_cmd_file`\r\n  echo Error:With nsupdate $file\r\nfi\r\n\t\r\n\r\nip_reversed=`echo $ip |awk  ' BEGIN {  FS=\".\"} {print $4 \".\" $3 \".\" $2 \".\" $1}'`\r\necho server 127.0.0.1 > $dns_cmd_file\r\necho update delete ${ip_reversed}.in-addr.arpa. >> $dns_cmd_file\r\necho send >> $dns_cmd_file\r\nnsupdate -k /etc/bind/keys/ddns.private $dns_cmd_file\r\ninr=$?\r\ncp $dns_cmd_file /tmp/rm_inapra_$fqdn_str\r\n\r\nif test $inr -eq 0\r\n then\r\n   rm $dns_cmd_file\r\n   echo Success\r\n else\r\n   file=`cat $dns_cmd_file`\r\n   echo Error:With nsupdate $file\r\nfi\r\n\t\r\nreturn=`expr $r + $inr`\r\nexit $return\r\n\r\n"
+      }
     },
     "consumer_params": [
       {
@@ -117,12 +134,18 @@
               "type": "string"
             }
           }
-        ]
+        ],
+        "script": {
+          "content": "#!/bin/sh\r\nshow_zone_file()\r\n{\r\ncat /home/bind/engines/zones/named.conf.$domain_name |egrep \"CNAME|TXT|A|IN|NS|MX\"\r\n}\r\nif ! test -z $domain_name\r\n then\r\n  if test -f /home/bind/engines/zones/named.conf.$domain_nam\r\n   then\r\n     show_zone_file\r\n   else\r\n    echo Domain $domain_name is not self hosted\r\n  fi    \r\nelse\r\n   cd /home/bind/engines/zones\r\n    for domain_name in ` ls | sed \"/named.conf./s///\"`\r\n     do\r\n       echo $domain_name\r\n       show_zone_file      \r\n     done\r\nfi     "
+        }
       },
       {
         "name": "list_domains",
         "label": "List Domains",
-        "return_type": "json"
+        "return_type": "json",
+        "script": {
+          "content": "#!/bin/sh\r\n\r\n\r\nformat_entry()\r\n{\r\n if test $n -eq 0\r\n then\r\n   n=1\r\n else\r\n  echo -n ,\r\nfi\r\n echo -n '\"'$list_entry'\"'\r\n}\r\n\r\nlist_entries()\r\n{\r\n for list_entry in `ls`\r\n do\r\n  format_entry\r\n done\r\n}\r\n\r\n\r\necho -n '{\"internal\":['\r\nif test -d /home/bind/domain_list/lan/\r\n then\r\n   cd /home/bind/domain_list/lan/\r\n   n=0\r\n   list_entries\r\nfi\r\n\r\necho -n '],\"external\":['\r\n\r\n\r\nif test -d /home/bind/domain_list/wan/\r\n then\r\n  cd /home/bind/domain_list/wan/\r\n  n=0\r\n  list_entries\r\nfi\r\n\r\necho ']}'"
+        }
       },
       {
         "name": "refresh_hosted_domains",
@@ -131,7 +154,7 @@
         "return_type": "none",
         "script": {
           "language": "sh",
-          "content": "#!/bin/bash\r\n\r\nif ! test -d /home/bind/domain_list/lan/\r\n then\r\n \texit\r\n fi\r\n \r\ncd /home/bind/domain_list/lan/\r\n\r\nip=$2\r\n\r\n\r\n  if test -z ${ip}\r\n\tthen\r\n\t\techo Error:Missing IP Address\r\n        exit 127\r\n    fi\r\n\r\nfor domain in `ls `\r\n do\r\n   echo '{\"domain_name\":\"'$domain'\",\"ip\":\"'$ip'\",\"ip_type\":\"lan\"}' | /home/add_service.sh \r\n   #:domain_name=$domain:ip=$ip:ip_type=lan:\r\n done"
+          "content": "#!/bin/sh\r\n\r\nif ! test -d /home/bind/domain_list/lan/\r\n then\r\n \texit\r\n fi\r\n \r\ncd /home/bind/domain_list/lan/\r\n\r\n if ! test -f /home/engines/system/net/ip\r\n  then\r\n   echo Error:Missing IP Address file\r\n        exit 2\r\n fi\r\n        \r\nip=`cat /home/engines/system/net/ip`\r\n\r\n  if test -z ${ip}\r\n\tthen\r\n\t\techo Error:Missing IP Address\r\n        exit 128\r\n    fi\r\n  if test  ${ip} = false\r\n\tthen\r\n\t\techo Error:Missing IP Address\r\n        exit 128\r\n    fi\r\n\r\n\r\nfor domain_name in `ls `\r\n do\r\n  type_path=domains\r\n  export domain_name ip ip_type type_path\r\n  /home/engines/scripts/services/add_service.sh \r\n done\r\n \r\n "
         }
       }
     ],
@@ -162,11 +185,11 @@
         ],
         "set_script": {
           "language": "sh",
-          "content": "#!/bin/bash\r\n\r\n. /home/engines/functions/params_to_env.sh\r\nPARAMS_FILE=/home/engines/scripts/configurators/saved/dns_forwarders\r\nparms_to_file_and_env\r\n\r\n if test -z $dns_server\r\n  then\r\n   $dns_server=\" \"\r\n fi \r\n \r\nif test ${#dns_server} -ge 7\r\n then \r\n   echo \"forwarders {\r\n\t$dns_server; \" > /home/bind/engines/forwarders\r\n\r\n    if ! test -z $dns_server2\r\n     then\r\n       if test ${#dns_server2} -ge 7\r\n        then\r\n         echo \"\t$dns_server2; \" >> /home/bind/engines/forwarders\r\n        fi \r\n    fi \r\n  echo \"}; \" >> /home/bind/engines/forwarders\r\n  else\r\n    echo \"Clearing forwarders\"\r\n   echo \"\" > /home/bind/engines/forwarders \r\nfi\r\n  \r\necho Success\r\nexit 0\r\n "
+          "content": "#!/bin/sh\r\n\r\n\r\n if test -z $dns_server\r\n  then\r\n   $dns_server=\" \"\r\n fi\r\n\r\nif test ${#dns_server} -ge 7\r\n then\r\n  echo  -n ${dns_server} >/home/engines/scripts/configurators/saved/dns_forwarder1\r\nif test ${#dns_server2} -ge 7\r\n  then\r\n  echo  -n ${dns_server2} >> /home/engines/scripts/configurators/saved/dns_forwarder2\r\n else\r\n  if test -f /home/engines/scripts/configurators/saved/dns_forwarder2\r\n  then\r\n  rm /home/engines/scripts/configurators/saved/dns_forwarder2\r\n fi\r\n fi\r\n   echo \"forwarders {\r\n        $dns_server; \" > /home/bind/engines/forwarders\r\n\r\n    if ! test -z $dns_server2\r\n     then\r\n       if test ${#dns_server2} -ge 7\r\n        then\r\n         echo \" $dns_server2; \" >> /home/bind/engines/forwarders\r\n        fi\r\n    fi\r\n  echo \"}; \" >> /home/bind/engines/forwarders\r\n  else\r\n    echo \"Clearing forwarders\"\r\n   echo \"\" > /home/bind/engines/forwarders\r\nfi\r\n\r\necho Success\r\nexit 0\r\n "
         },
         "read_script": {
           "language": "sh",
-          "content": "#!/bin/bash\r\n\r\nif test -f /home/engines/scripts/configurators/saved/dns_forwarders\r\n\tthen\r\n\t\tcat /home/engines/scripts/configurators/saved/dns_forwarders\r\n\telse\r\n\t\techo '{\"dns_forwarders\":\"Not Set\"}'\r\nfi\r\nexit 0"
+          "content": "#!/bin/sh\r\n\r\n echo '{'\r\n\r\nif test -f /home/engines/scripts/configurators/saved/dns_forwarder1\r\n then\r\n   dns_forwarder1=`cat home/engines/scripts/configurators/saved/dns_forwarder1`\r\n\r\n  if test -f /home/engines/scripts/configurators/saved/dns_forwarder2\r\n   then\r\n    dns_forwarder2=`cat home/engines/scripts/configurators/saved/dns_forwarder2`\r\n  fi\r\nfi\r\n  if ! test -z $dns_forwarder1\r\n   then\r\n    echo '\"dns_server\":\"'$dns_forwarder1'\"'\r\n  fi\r\n\r\n  if ! test -z $dns_forwarder1\r\n   then\r\n    echo ':\"dns_server2\":\"'$dns_forwarder2'\"'\r\n  fi\r\n\r\n        echo '}'\r\n\r\nexit 0\r\n~            "
         }
       }
     ]
