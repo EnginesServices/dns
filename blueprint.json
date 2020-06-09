@@ -22,7 +22,7 @@
         "label": "dns"
       }
     },
-    "timestamp": "2020-06-09T13:13:10+10:00"
+    "timestamp": "2020-06-09T13:45:52+10:00"
   },
   "software": {
     "base": {
@@ -57,7 +57,7 @@
     "scripts": {
       "start": {
         "language": "sh",
-        "content": "#!/bin/sh\r\n\r\ngrep BLANK /var/lib/bind/engines/engines.dnsrecords >/dev/null\r\n\r\nif test $? -eq 0\r\n then\r\n   ip_r=`grep dns /etc/hosts|awk '{print $1}' |cut -d. -f-3`\r\n   ip=${ip_r}.1\r\n   net=`echo $ip_r |awk  ' BEGIN {  FS=\".\"} {print $2 \".\" $1}'`\r\n   cat  /home/engines/templates/dns/engines.internal.domain.tmpl |sed \"/IP/s//$ip/\" > /var/lib/bind/engines/engines.dnsrecords\r\n   cat  /home/engines/templates/dns/engines.internal.in-addr.arpa.tmpl |sed \"/NET/s//$net/g\" > /var/lib/bind/engines/engines.in-addr.arpa.dnsrecords\r\nfi\r\n\r\n\r\nKILL_SCRIPT=/home/engines/scripts/signal/kill_bind.sh\r\nexport KILL_SCRIPT\r\n\r\n\r\nPID_FILE=/home/engines/run/named.pid\r\nexport PID_FILE\r\n. /home/engines/functions/trap.sh\r\n\r\nsudo -n /home/engines/scripts/engine/sudo/_setup.sh\r\n\r\nsudo -n /usr/sbin/named  -c /etc/bind/named.conf -f -u bind &\r\n\r\nstartup_complete\r\n\r\nsleep 10\r\n/home/engines/scripts/engine/create_int_ip_dns_records.sh\r\n/home/engines/scripts/engine/create_ext_ip_dns_records.sh\r\nwait  \r\n\r\nexit_code=$?\r\n\r\nshutdown_complete\r\n\r\n"
+        "content": "#!/bin/sh\r\n\r\ngrep BLANK /var/lib/bind/engines/engines.dnsrecords >/dev/null\r\n\r\nif test $? -eq 0\r\n then\r\n   ip_r=`grep dns /etc/hosts|awk '{print $1}' |cut -d. -f-3`\r\n   ip=${ip_r}.1\r\n   net=`echo $ip_r |awk  ' BEGIN {  FS=\".\"} {print $2 \".\" $1}'`\r\n   cat  /home/engines/templates/dns/engines.internal.domain.tmpl |sed \"/IP/s//$ip/\" > /var/lib/bind/engines/engines.dnsrecords\r\n   cat  /home/engines/templates/dns/engines.internal.in-addr.arpa.tmpl |sed \"/NET/s//$net/g\" > /var/lib/bind/engines/engines.in-addr.arpa.dnsrecords\r\nfi\r\n\r\n\r\nKILL_SCRIPT=/home/engines/scripts/signal/kill_bind.sh\r\nexport KILL_SCRIPT\r\n\r\n\r\nPID_FILE=/home/engines/run/named.pid\r\nexport PID_FILE\r\n. /home/engines/functions/trap.sh\r\n\r\nsudo -n /home/engines/scripts/engine/sudo/_setup.sh\r\n\r\nsudo -n /usr/sbin/named  -c /etc/bind/named.conf -f -u bind &\r\n\r\nstartup_complete\r\n\r\nsleep 10\r\n/home/engines/scripts/engine/create_int_ip_dns_record.sh\r\n/home/engines/scripts/engine/create_ext_ip_dns_record.sh\r\nwait  \r\n\r\nexit_code=$?\r\n\r\nshutdown_complete\r\n\r\n"
       },
       "install": {
         "language": "sh",
