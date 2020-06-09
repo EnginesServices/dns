@@ -1,0 +1,3 @@
+#!/bin/sh
+
+if ! test -d /home/bind/domain_list/lan/\r\n then\r\n \texit\r\n fi\r\n \r\ncd /home/bind/domain_list/lan/\r\n\r\n if ! test -f /home/engines/system/net/ip\r\n  then\r\n   echo Error:Missing IP Address file\r\n        exit 2\r\n fi\r\n        \r\nip=`cat /home/engines/system/net/ip`\r\n\r\n  if test -z ${ip}\r\n\tthen\r\n\t\techo Error:Missing IP Address\r\n        exit 128\r\n    fi\r\n  if test  ${ip} = false\r\n\tthen\r\n\t\techo Error:Missing IP Address\r\n        exit 128\r\n    fi\r\n\r\n\r\nfor domain_name in `ls `\r\n do\r\n  type_path=domains\r\n  export domain_name ip ip_type type_path\r\n  /home/engines/scripts/services/add_service.sh \r\n done
