@@ -14,7 +14,6 @@
   "user": {
     "identifier": "22009",
     "name": "bind",
-    "group": "bind",
     "create": true
   },
   "stages": [
